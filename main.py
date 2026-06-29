@@ -30,39 +30,41 @@ FEEDS = ["https://finance.yahoo.com/news/rssindex",
 ]
 
 articles = []
+def web_scrapper():
+    for i in range(len(FEEDS)):
+        rss_url = FEEDS[i]
 
-for i in range(len(FEEDS)):
-    rss_url = FEEDS[i]
+        feed = feedparser.parse(rss_url)
 
-    feed = feedparser.parse(rss_url)
-
-    for entry in feed.entries:
-        title = entry.get("title")
-        link = entry.get("link")
-        print("CHECKING: ", title)
-
-
-        html = trafilatura.fetch_url(link)
-
-        if html is None: #no text
-            print("NO TEXT FOUND")
-            continue
-        else: # we have text
-            text = trafilatura.extract(html)
-            print("TEXT FOUND")
-        
-        articles.append({
-            "source_feed":rss_url,
-            "title":title,
-            "link":link,
-            "full_article":text
-        })
-
-df = pd.DataFrame(articles)
-
-print(df.head())
+        for entry in feed.entries:
+            title = entry.get("title")
+            link = entry.get("link")
+            print("CHECKING: ", title)
 
 
+            html = trafilatura.fetch_url(link)
+
+            if html is None: #no text
+                print("NO TEXT FOUND")
+                continue
+            else: # we have text
+                text = trafilatura.extract(html)
+                print("TEXT FOUND")
+            
+            articles.append({
+                "source_feed":rss_url,
+                "title":title,
+                "link":link,
+                "full_article":text
+            })
+    log_data()
+
+def log_data():
+    df = pd.DataFrame(articles)
+    df.to_csv("text.csv")
+    print(df.head())
+
+web_scrapper()
         
 
 
