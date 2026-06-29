@@ -18,3 +18,10 @@ if tf.__version__:
     print("woprks")
 else:
     print("NOT WORKING")
+
+FEEDS = ["https://finance.yahoo.com/news/rssindex",
+        "https://www.cnbc.com/id/100003114/device/rss/rss.html",            # CNBC top news
+        "https://www.cnbc.com/id/20910258/device/rss/rss.html",             # CNBC markets
+        "https://feeds.content.dowjones.io/public/rss/mw_topstories",       # MarketWatch
+]
+         
