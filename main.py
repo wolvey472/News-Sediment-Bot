@@ -26,7 +26,7 @@ FEEDS = ["https://finance.yahoo.com/news/rssindex",
         "https://feeds.content.dowjones.io/public/rss/mw_topstories",       # MarketWatch
 ]
 
-
+articles = []
 
 for i in range(len(FEEDS)):
     rss_url = FEEDS[i]
@@ -34,10 +34,12 @@ for i in range(len(FEEDS)):
     feed = feedparser.parse(rss_url)
 
     for entry in feed.entries:
-        print("TITLE", entry.title)
-        print("LINK", entry.link)
+        title = entry.get("title")
+        link = entry.get("link")
+        print("TITLE", title)
+        print("LINK", link)
 
-        html = trafilatura.fetch_url(entry.link)
+        html = trafilatura.fetch_url(link)
 
         if html is None:
             print("could not get html")
@@ -49,5 +51,7 @@ for i in range(len(FEEDS)):
             print("could not get text")
         else:
             print(text)
+        
+
 
    
