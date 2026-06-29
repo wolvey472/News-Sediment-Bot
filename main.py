@@ -60,11 +60,20 @@ def web_scrapper():
     log_data()
 
 def log_data():
+
     df = pd.DataFrame(articles)
-    df.to_csv("text.csv")
+    df.to_csv("text.csv",index=False)
     print(df.head())
+    print(df.shape)
+    columns = df.shape[0] # columns long
+    text = df['full_article']
 
 web_scrapper()
+
+def train_model():
+    ...
+    
+
         
 
 
