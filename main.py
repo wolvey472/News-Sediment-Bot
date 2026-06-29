@@ -41,16 +41,13 @@ for i in range(len(FEEDS)):
 
         html = trafilatura.fetch_url(link)
 
-        if html is None:
+        if html is None: #no text
             print("could not get html")
             continue
+        else: # we have text
+            text = trafilatura.extract(html)
 
-        text = trafilatura.extract(html)
 
-        if text is None:
-            print("could not get text")
-        else:
-            print(text)
         
 
 
