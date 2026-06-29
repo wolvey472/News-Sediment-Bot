@@ -32,6 +32,15 @@ FEEDS = ["https://finance.yahoo.com/news/rssindex",
         "https://www.cnbc.com/id/20910258/device/rss/rss.html",             # CNBC markets
         "https://feeds.content.dowjones.io/public/rss/mw_topstories",       # MarketWatch
 ]
+stocks = {
+    "AAPL": ["AAPL", "Apple"],
+    "TSLA": ["TSLA", "Tesla"],
+    "NVDA": ["NVDA", "Nvidia", "NVIDIA"],
+    "MSFT": ["MSFT", "Microsoft"],
+    "AMZN": ["AMZN", "Amazon"],
+    "META": ["META", "Meta", "Facebook"],
+    "GOOGL": ["GOOGL", "GOOG", "Google", "Alphabet"],
+}
 
 articles = []
 def web_scrapper():
@@ -61,7 +70,30 @@ def web_scrapper():
                 "link":link,
                 "full_article":text
             })
+    find_stocks()
+  
+
+
+web_scrapper()
+
+def train_model():
+    ...
+    
+def find_stocks(text):
+    if not isinstance(text, str):
+        return []
+    
+    found = []
+
+    for ticker, keywords in stocks.items():
+        for word in keywords:
+            pattern = r"\b" + re.escape(word) + r"\b"
+
+            if re.search(pattern, text, re.IGNORECASE):
+                found.append(ticker)
+                break
     log_data()
+
 
 def log_data():
 
@@ -71,13 +103,6 @@ def log_data():
     print(df.shape)
     columns = df.shape[0] # columns long
     text = df['full_article']
-
-web_scrapper()
-
-def train_model():
-    ...
-    
-def find_stocks():
 
         
 
