@@ -39,16 +39,17 @@ for i in range(len(FEEDS)):
     for entry in feed.entries:
         title = entry.get("title")
         link = entry.get("link")
-        print("TITLE", title)
-        print("LINK", link)
+        print("CHECKING: ", title)
+
 
         html = trafilatura.fetch_url(link)
 
         if html is None: #no text
-            print("could not get html")
+            print("NO TEXT FOUND")
             continue
         else: # we have text
             text = trafilatura.extract(html)
+            print("TEXT FOUND")
         
         articles.append({
             "source_feed":rss_url,
