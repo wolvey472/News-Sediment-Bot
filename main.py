@@ -15,6 +15,9 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"   # hide INFO/WARNING/ERROR C++ logs
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # hide the oneDNN message
 import tensorflow as tf
 
+import pandas as pd
+
+
 if tf.__version__:
     print("woprks")
 else:
@@ -46,6 +49,17 @@ for i in range(len(FEEDS)):
             continue
         else: # we have text
             text = trafilatura.extract(html)
+        
+        articles.append({
+            "source_feed":rss_url,
+            "title":title,
+            "link":link,
+            "full_article":text
+        })
+
+df = pd.DataFrame(articles)
+
+print(df.head())
 
 
         
