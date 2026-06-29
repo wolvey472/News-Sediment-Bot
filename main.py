@@ -42,18 +42,42 @@ stocks = {
     "GOOGL": ["GOOGL", "GOOG", "Google", "Alphabet"],
 }
 
+
+import re
+
+def extract_yahoo_tickers(text):
+    if not isinstance(text, str):
+        return []
+
+    pattern = r"\((NYSE|NASDAQ|AMEX|NYSEAMERICAN|OTC|OTCMKTS):\s*([A-Z][A-Z0-9.-]*)\)"
+
+    matches = re.findall(pattern, text)
+
+    results = []
+
+    for exchange, ticker in matches:
+        results.append({
+            "exchange": exchange,
+            "ticker": ticker
+        })
+
+    return results
+
+
 articles = []
 def web_scrapper():
-    for i in range(len(FEEDS)):
-        rss_url = FEEDS[i]
+    articles.clear() #make sure none is in the list
+
+    for rss_url in FEEDS:
+
 
         feed = feedparser.parse(rss_url)
 
         for entry in feed.entries:
             title = entry.get("title")
             link = entry.get("link")
-            print("CHECKING: ", title)
 
+            print("CHECKING: ", title)
 
             html = trafilatura.fetch_url(link)
 
@@ -70,41 +94,34 @@ def web_scrapper():
                 "link":link,
                 "full_article":text
             })
-    find_stocks()
+    log_data()
   
 
 
-web_scrapper()
 
-def train_model():
-    ...
-    
-def find_stocks(text):
-    if not isinstance(text, str):
-        return []
-    
-    found = []
 
-    for ticker, keywords in stocks.items():
-        for word in keywords:
-            pattern = r"\b" + re.escape(word) + r"\b"
 
-            if re.search(pattern, text, re.IGNORECASE):
-                found.append(ticker)
-                break
-    log_data()
 
 
 def log_data():
 
     df = pd.DataFrame(articles)
+
+    df["stocks_mentioned"] = df["full_article"].apply(extract_yahoo_tickers)
+
     df.to_csv("text.csv",index=False)
     print(df.head())
+    print(df[["title", "stocks_mentioned"]].head())
     print(df.shape)
+
+
+    #Might need these for Neural netowrk data
     columns = df.shape[0] # columns long
     text = df['full_article']
 
-        
-
+def train_model():
+    pass
+    
+web_scrapper()
 
    
