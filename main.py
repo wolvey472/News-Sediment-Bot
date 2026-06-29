@@ -1,6 +1,7 @@
 #Web scraping
 import requests as rq
 import feedparser
+import trafilatura
 #--------------
 
 #Time
@@ -24,4 +25,29 @@ FEEDS = ["https://finance.yahoo.com/news/rssindex",
         "https://www.cnbc.com/id/20910258/device/rss/rss.html",             # CNBC markets
         "https://feeds.content.dowjones.io/public/rss/mw_topstories",       # MarketWatch
 ]
-         
+
+
+
+for i in range(len(FEEDS)):
+    rss_url = FEEDS[i]
+
+    feed = feedparser.parse(rss_url)
+
+    for entry in feed.entries:
+        print("TITLE", entry.title)
+        print("LINK", entry.link)
+
+        html = trafilatura.fetch_url(entry.link)
+
+        if html is None:
+            print("could not get html")
+            continue
+
+        text = trafilatura.extract(html)
+
+        if text is None:
+            print("could not get text")
+        else:
+            print(text)
+
+   
