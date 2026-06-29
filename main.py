@@ -2,6 +2,7 @@
 import requests as rq
 import feedparser
 import trafilatura
+import re
 #--------------
 
 #Time
@@ -14,9 +15,12 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"   # hide INFO/WARNING/ERROR C++ logs
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # hide the oneDNN message
 import tensorflow as tf
+#---------------
 
+#numbers helpers
 import pandas as pd
-
+import numpy as np
+#----------------
 
 if tf.__version__:
     print("woprks")
@@ -73,6 +77,7 @@ web_scrapper()
 def train_model():
     ...
     
+def find_stocks():
 
         
 
