@@ -126,7 +126,11 @@ def log_data():
                 exchange = m.group(1)   # "NYSE"
                 nw = m.group(2)         # "NVDA"
                 #print(nw)
-                all_tickers.append(nw)
+                if all_tickers:
+                    if nw not in all_tickers[-1]:
+                        all_tickers.append(nw)
+                else:
+                    all_tickers.append(nw) #append first no matter what
 
     #   --- COMPANIES ---
         valid = ["inc.", "corp.", "inc", "co", "group", "corporation", "systems"]  
