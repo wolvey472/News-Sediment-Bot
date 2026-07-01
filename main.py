@@ -134,50 +134,38 @@ def pull_data():
     
 
 
-def web_scrapper(articles):
+def web_scrapper(article_url):
 
-    for article in track(articles, description="SCRAPING "):
+    html = trafilatura.fetch_url(article_url)
 
-        if (html := trafilatura.fetch_url(article)) is not None:
-            if (text := trafilatura.extract(html)) is not None:
-                #found text
-                store_text.append(text)
-            else:
-                continue
-            print(ERR)
-        else:
-            continue
-        print(ERR)
-    return store_text
+    if html is None:
+        print(f"[red]No HTML found for:[/red] {article_url}")
+        return None
+
+    text = trafilatura.extract(html)
+
+    if text is None:
+        print(f"[red]No article text found for:[/red] {article_url}")
+        return None
+
+    return text
 
 
 
 
 
 def log_data():
-    df2 = pd.read_csv(r"C:\Users\carso\Downloads\CS50 Project NEW\sp500.csv")
-
-    ticker = df2['Symbol']
-    name = df2['Name']
-    sector = df2['Sector']
-
     df = pd.DataFrame(articles)
 
+    print(df[["title", "source", "overall_sentiment", "url"]])
 
+    df.to_csv("news_articles.csv", index=False)
 
-    all_tickers = []
-    all_companies = []
-    title2 = []
+    print("[green]Saved to news_articles.csv[/green]")
 
-    data_found = {"ticker":None,
-                  "company":None,
-                  "article":None}
+    ticker_count = Counter(articles['tickers'])
 
-    for article in track(articles, description="SEARCHING "):
-        text = article["full_article"] #pull each text from each article
-        if text is None: # should not run
-            continue
-
+pull_data()
 
 
         
@@ -188,10 +176,6 @@ def log_data():
     
 
 
-    #endregion
-        
-
-    ticker_counts = Counter(all_tickers)
 
 
 
@@ -214,9 +198,5 @@ def log_data():
         
 
 
-def train_model():
-    pass
-    
-pull_data()
 
    
