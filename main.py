@@ -75,7 +75,7 @@ ERR = f.renderText("ERROR")
 store_url=[]
 store_text = []
 def pull_data():
-    articles.clear() #make sure none is in the list
+    store_text.clear() #make sure none is in the list
     
     for rss_url in FEEDS_TEST: #CHANGE WHEN DONE TESTING
         print(f.renderText("-"*10))
@@ -97,7 +97,7 @@ def pull_data():
         response.raise_for_status()
         data = response.json()
 
-        for article in track(data, description="SCRAPING"):
+        for article in track(data['feed'], description="SCRAPING"):
             title = article['title']
             sent_label = article['overall_sentiment_label']
             source = article['source']
@@ -126,7 +126,6 @@ def web_scrapper(articles):
 
     for article in articles:
 
-            
         if (html := trafilatura.fetch_url(article)) is not None:
             if (text := trafilatura.extract(html)) is not None:
                 #found text
@@ -164,37 +163,7 @@ def log_data():
             continue
 
 
-    #region TICKER AND COMPANY SEARCHES
-    #   --- TICKER ---
-        for word in text.split():
 
-            m = re.search(r"\(([A-Z]+):([A-Z.]+)\)", word)
-            if m is not None:
-                exchange = m.group(1)   # "NYSE"
-                nw = m.group(2)         # "NVDA"
-                #print(nw)
-                if all_tickers:
-                    if nw not in all_tickers[-1]:
-                        all_tickers.append(nw)
-                else:
-                    all_tickers.append(nw) #append first no matter what
-
-    #   --- COMPANIES ---
-        valid = ["inc.", "corp.", "inc", "co", "group", "corporation", "systems"]  
-        companies = name #Valid DF companies
-
-        def clean_text(text):
-            return text.translate(str.maketrans("", "", string.punctuation)).lower()
-
-        clean_txt = clean_text(text)
-
-        for company in companies:
-            clean_company = clean_text(company)
-
-            if clean_company in clean_txt:
-                #print("FOUND:", company)
-                all_companies.append(company)
-                title2.append(text)
         
 
                     
