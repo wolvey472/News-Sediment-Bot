@@ -72,9 +72,9 @@ f = Figlet(font="starwars", width=200)
 ERR = f.renderText("ERROR")
 
 
-
-articles = []
-def web_scrapper():
+store_url=[]
+store_text = []
+def pull_data():
     articles.clear() #make sure none is in the list
     
     for rss_url in FEEDS_TEST: #CHANGE WHEN DONE TESTING
@@ -83,6 +83,8 @@ def web_scrapper():
         print(f.renderText("-"*10))
         print("[bold black]- Carson Shae\n\n")
         t.sleep(2)     
+
+
 
         params= {    
             "apikey":API,
@@ -97,22 +99,43 @@ def web_scrapper():
 
         for article in track(data, description="SCRAPING"):
             title = article['title']
-            sent_label = ['overall_sentiment_label']
+            sent_label = article['overall_sentiment_label']
+            source = article['source']
+            site_url = article['url']
 
-            for t in article['ticker_sentiment']:
-                ticker = t['ticker']
-                relevance = t['relevance_score']
-                sent_score = ['ticker_sentiment_score']
+            store_url.append(site_url)
+
+            for te in article['ticker_sentiment']:
+                ticker = te['ticker']
+                relevance = te['relevance_score']
+                sent_score = te['ticker_sentiment_score']
 
 
 
-            articles.append({       #data appending
-                "source_feed":rss_url,
+            articles.append({       #data appending  FIXXXX
+                "source_feed":source,
                 "title":title,
-                "link":link,
-                "full_article":text
+                "link":site_url,
+                
             })
-    log_data()
+    web_scrapper(store_url)
+    
+
+
+def web_scrapper(articles):
+
+    for article in articles:
+
+            
+        if (html := trafilatura.fetch_url(article)) is not None:
+            if (text := trafilatura.extract(html)) is not None:
+                #found text
+                store_text.append(text)
+            else:
+                continue
+    return store_text
+
+
 
 
 
