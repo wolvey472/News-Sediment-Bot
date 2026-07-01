@@ -72,10 +72,10 @@ f = Figlet(font="starwars", width=200)
 ERR = f.renderText("ERROR")
 
 
-store_url=[]
-store_text = []
+articles=[]
+
 def pull_data():
-    store_text.clear() #make sure none is in the list
+    
     
     for rss_url in FEEDS_TEST: #CHANGE WHEN DONE TESTING
         print(f.renderText("-"*10))
@@ -88,7 +88,7 @@ def pull_data():
 
         params= {    
             "apikey":API,
-            "limit":"20",
+            "limit":"2",
             "function":"NEWS_SENTIMENT",
             "sort":"LATEST"
         }
@@ -97,34 +97,46 @@ def pull_data():
         response.raise_for_status()
         data = response.json()
 
-        for article in track(data['feed'], description="SCRAPING"):
+        for article in track(data['feed'], description="GETTING DATA "):
             title = article['title']
             sent_label = article['overall_sentiment_label']
             source = article['source']
             site_url = article['url']
 
-            store_url.append(site_url)
+            tickers=[]
 
-            for te in article['ticker_sentiment']:
-                ticker = te['ticker']
-                relevance = te['relevance_score']
-                sent_score = te['ticker_sentiment_score']
+       
 
-
-
-            articles.append({       #data appending  FIXXXX
-                "source_feed":source,
-                "title":title,
-                "link":site_url,
-                
+        for te in article.get("ticker_sentiment", []):
+            tickers.append({
+                "ticker": te.get("ticker"),
+                "relevance": te.get("relevance_score"),
+                "sentiment_score": te.get("ticker_sentiment_score"),
+                "sentiment_label": te.get("ticker_sentiment_label")
             })
-    web_scrapper(store_url)
+
+        full_text = web_scrapper(site_url)
+
+        articles.append({
+            "title": title,
+            "url": site_url,
+            "source": source,
+            "overall_sentiment": sent_label,
+            "tickers": tickers,
+            "full_article": full_text
+        })
+
+
+
+
+
+  
     
 
 
 def web_scrapper(articles):
 
-    for article in articles:
+    for article in track(articles, description="SCRAPING "):
 
         if (html := trafilatura.fetch_url(article)) is not None:
             if (text := trafilatura.extract(html)) is not None:
@@ -132,6 +144,10 @@ def web_scrapper(articles):
                 store_text.append(text)
             else:
                 continue
+            print(ERR)
+        else:
+            continue
+        print(ERR)
     return store_text
 
 
@@ -201,6 +217,6 @@ def log_data():
 def train_model():
     pass
     
-web_scrapper()
+pull_data()
 
    
