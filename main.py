@@ -21,14 +21,21 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 import openpyxl
-from collections import Counter
+
 #----------------
 
-import xlwings as xl
-xl_file = r"C:\Users\carso\OneDrive\Desktop\kalshlog.xlsx"
-
+#Counting
+from collections import Counter
 import string
+#----------------
 
+#Looks
+from pyfiglet import Figlet
+import rich
+from rich import print
+from colorama import Fore
+from rich.progress import track
+#---------------
 if tf.__version__:
     print("-"*20)
     print("WORKS")
@@ -54,33 +61,39 @@ stocks = {
 }
 
 
-
+f = Figlet(font="starwars", width=200)
+ERR = f.renderText("ERROR")
 
 
 
 articles = []
 def web_scrapper():
     articles.clear() #make sure none is in the list
-
-    for rss_url in FEEDS_TEST:      #CHANGE WHEN DONE TESTING
+    
+    for rss_url in FEEDS_TEST:
+        print(f.renderText("-"*10))
+        print(f.renderText("NEWS BOT"))
+        print(f.renderText("-"*10))
+        print("[bold black]- Carson Shae\n\n")
+        t.sleep(2)      #CHANGE WHEN DONE TESTING
 
 
         feed = feedparser.parse(rss_url)
 
-        for entry in feed.entries:
+        for entry in track(feed.entries, description=""):
             title = entry.get("title")
             link = entry.get("link")
 
-            print("CHECKING: ", title)
+            #print("CHECKING: ", title)
 
             html = trafilatura.fetch_url(link)
 
             if html is None: #no text
-                print("NO TEXT FOUND")
+                #print("NO TEXT FOUND")
                 continue
             else: # we have text
                 text = trafilatura.extract(html)
-                print("TEXT FOUND")
+                #print("TEXT FOUND")
             
             articles.append({       #data appending
                 "source_feed":rss_url,
@@ -93,11 +106,11 @@ def web_scrapper():
 
 
 def log_data():
-    df = pd.read_csv(r"C:\Users\carso\Downloads\CS50 Project NEW\sp500.csv")
+    df2 = pd.read_csv(r"C:\Users\carso\Downloads\CS50 Project NEW\sp500.csv")
 
-    ticker = df['Symbol']
-    name = df['Name']
-    sector = df['Sector']
+    ticker = df2['Symbol']
+    name = df2['Name']
+    sector = df2['Sector']
 
     df = pd.DataFrame(articles)
 
@@ -148,9 +161,9 @@ def log_data():
                 #print("FOUND:", company)
                 all_companies.append(company)
                 title2.append(text)
-            else:
-                continue
-            
+        
+
+                    
 
 
     
