@@ -70,17 +70,17 @@ articles = []
 def web_scrapper():
     articles.clear() #make sure none is in the list
     
-    for rss_url in FEEDS_TEST:
+    for rss_url in FEEDS_TEST: #CHANGE WHEN DONE TESTING
         print(f.renderText("-"*10))
         print(f.renderText("NEWS BOT"))
         print(f.renderText("-"*10))
         print("[bold black]- Carson Shae\n\n")
-        t.sleep(2)      #CHANGE WHEN DONE TESTING
+        t.sleep(2)     
 
 
         feed = feedparser.parse(rss_url)
 
-        for entry in track(feed.entries, description=""):
+        for entry in track(feed.entries, description="SCRAPING "):
             title = entry.get("title")
             link = entry.get("link")
 
@@ -124,7 +124,7 @@ def log_data():
                   "company":None,
                   "article":None}
 
-    for article in articles:
+    for article in track(articles, description="SEARCHING "):
         text = article["full_article"] #pull each text from each article
         if text is None: # should not run
             continue
