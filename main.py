@@ -36,6 +36,11 @@ from rich import print
 from colorama import Fore
 from rich.progress import track
 #---------------
+
+#API
+from api_key import API
+#--------------
+
 if tf.__version__:
     print("-"*20)
     print("WORKS")
@@ -50,6 +55,8 @@ FEEDS = ["https://finance.yahoo.com/news/rssindex",
 ]
 FEEDS_TEST = ["https://finance.yahoo.com/news/rssindex",
 ]
+
+url = "https://www.alphavantage.co/query"
 stocks = {
     "AAPL": ["AAPL", "Apple"],
     "TSLA": ["TSLA", "Tesla"],
@@ -77,24 +84,28 @@ def web_scrapper():
         print("[bold black]- Carson Shae\n\n")
         t.sleep(2)     
 
+        params= {    
+            "apikey":API,
+            "limit":"20",
+            "function":"NEWS_SENTIMENT",
+            "sort":"LATEST"
+        }
 
-        feed = feedparser.parse(rss_url)
+        response = rq.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
 
-        for entry in track(feed.entries, description="SCRAPING "):
-            title = entry.get("title")
-            link = entry.get("link")
+        for article in track(data, description="SCRAPING"):
+            title = article['title']
+            sent_label = ['overall_sentiment_label']
 
-            #print("CHECKING: ", title)
+            for t in article['ticker_sentiment']:
+                ticker = t['ticker']
+                relevance = t['relevance_score']
+                sent_score = ['ticker_sentiment_score']
 
-            html = trafilatura.fetch_url(link)
 
-            if html is None: #no text
-                #print("NO TEXT FOUND")
-                continue
-            else: # we have text
-                text = trafilatura.extract(html)
-                #print("TEXT FOUND")
-            
+
             articles.append({       #data appending
                 "source_feed":rss_url,
                 "title":title,
