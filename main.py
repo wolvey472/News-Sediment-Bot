@@ -8,6 +8,7 @@ import re
 #Time
 import time as t
 from datetime import datetime, timedelta
+from time import timezone
 #--------------
 
 #Machine Learning
@@ -91,10 +92,12 @@ def get_feed_entries(rss_url):
 
 def entry_datetime(entry):
     if hasattr(entry, "published_parsed") and entry.published_parsed:
-    return datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+        return datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
 
-if hasattr(entry, "updated_parsed") and entry.updated_parsed:
-    return datetime(*entry.updated_parsed[:6], tzinfo=timezone.utc)
+    if hasattr(entry, "updated_parsed") and entry.updated_parsed:
+        return datetime(*entry.updated_parsed[:6], tzinfo=timezone.utc)
+    
+    return None #if no time (shouldent happen)
 
 def pull_data():
     articles.clear()
@@ -125,15 +128,30 @@ def pull_data():
             published_time = entry_datetime(entry)
 
             #print("CHECKING: ", title)
+            print()
+            print(title)
+            print(published_time)
+            print(link)
+
+
+            if (published_time is None) or (published_time < cut_off):
+                print("[bold blue] SKIPPED DUE TO DATE")
+                continue
+            if not link:
+                continue
 
             html = trafilatura.fetch_url(link)
 
             if html is None: #no text
-                #print("NO TEXT FOUND")
+                print("NO TEXT FOUND")
                 continue
-            else: # we have text
-                text = trafilatura.extract(html)
-                #print("TEXT FOUND")
+
+            text = trafilatura.extract(html)
+
+            if not text:
+                print("EXTRACT FAILED")
+                continue
+                
 
             articles.append({       #data appending
                 "source_feed":rss_url,
