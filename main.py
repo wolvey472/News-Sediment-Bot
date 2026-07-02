@@ -58,14 +58,12 @@ FEEDS_TEST = ["https://finance.yahoo.com/news/rssindex",
 ]
 
 url = "https://www.alphavantage.co/query"
-stocks = {
-    "AAPL": ["AAPL", "Apple"],
-    "TSLA": ["TSLA", "Tesla"],
-    "NVDA": ["NVDA", "Nvidia", "NVIDIA"],
-    "MSFT": ["MSFT", "Microsoft"],
-    "AMZN": ["AMZN", "Amazon"],
-    "META": ["META", "Meta", "Facebook"],
-    "GOOGL": ["GOOGL", "GOOG", "Google", "Alphabet"],
+
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
 }
 
 
@@ -103,12 +101,7 @@ def pull_data():
     articles.clear()
     cut_off = datetime.now() - timedelta(hours=24)
     
-    for rss_url in FEEDS_TEST: #CHANGE WHEN DONE TESTING
-        print(f.renderText("-"*10))
-        print(f.renderText("NEWS BOT"))
-        print(f.renderText("-"*10))
-        print("[bold black]- Carson Shae\n\n")
-        t.sleep(2)     
+  
 
 
 
@@ -157,52 +150,35 @@ def pull_data():
                 "source_feed":rss_url,
                 "title":title,
                 "link":link,
+                "published":published_time,
                 "full_article":text
             })
-    
-    print("articles saved: ",len(articles))
     log_data()
+    return articles
 
 
 
 
-
-  
-    
-
-
-def web_scrapper(article_url):
-
-    html = trafilatura.fetch_url(article_url)
-
-    if html is None:
-        print(f"[red]No HTML found for:[/red] {article_url}")
-        return None
-
-    text = trafilatura.extract(html)
-
-    if text is None:
-        print(f"[red]No article text found for:[/red] {article_url}")
-        return None
-
-    return text
-
-
-
-
-
+file = "news.csv"
 def log_data():
+    if len(articles) == 0:
+        print("no articles found")
+        return None
+    
     df = pd.DataFrame(articles)
 
-    print(df[["title", "source", "overall_sentiment", "url"]])
+    #sort newest first
 
-    df.to_csv("news_articles.csv", index=False)
+    if 'published' in df.columns:
+        df['published'] = pd.to_datetime(df['published'], errors="coerce")
+        df = df.sort_values('published', ascending=False)
 
-    print("[green]Saved to news_articles.csv[/green]")
+    df.to_csv(file, index=False)
 
-    ticker_count = Counter()
+    print(f"Saved {len(df)} articles to {file}")
+data = pull_data()
 
-pull_data()
+print("articles saved: ", len(data))
 
 
         
