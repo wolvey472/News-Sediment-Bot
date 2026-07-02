@@ -7,7 +7,7 @@ import re
 
 #Time
 import time as t
-from datetime import datetime
+from datetime import datetime, timedelta
 #--------------
 
 #Machine Learning
@@ -73,9 +73,32 @@ ERR = f.renderText("ERROR")
 
 
 articles=[]
+def get_feed_entries(rss_url):
+    response = rq.get(rss_url, headers=HEADERS, timeout=15)
+
+    print("RSS:", rss_url)
+    print("Status:", response.status_code)
+
+    if response.status_code != 200:
+        print("[red] FEED ERROR")
+        return []
+        
+
+    feed = feedparser.parse(response.content)
+    print("Feed count:", len(feed.entries))
+
+    return feed.entries
+
+def entry_datetime(entry):
+    if hasattr(entry, "published_parsed") and entry.published_parsed:
+    return datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+
+if hasattr(entry, "updated_parsed") and entry.updated_parsed:
+    return datetime(*entry.updated_parsed[:6], tzinfo=timezone.utc)
 
 def pull_data():
-    
+    articles.clear()
+    cut_off = datetime.now() - timedelta(hours=24)
     
     for rss_url in FEEDS_TEST: #CHANGE WHEN DONE TESTING
         print(f.renderText("-"*10))
@@ -86,45 +109,41 @@ def pull_data():
 
 
 
-        params= {    
-            "apikey":API,
-            "limit":"2",
-            "function":"NEWS_SENTIMENT",
-            "sort":"LATEST"
-        }
+    for rss_url in FEEDS_TEST: #CHANGE WHEN DONE TESTING
+        print(f.renderText("-"*10))
+        print(f.renderText("NEWS BOT"))
+        print(f.renderText("-"*10))
+        print("[bold black]- Carson Shae\n\n")
+        t.sleep(2)
 
-        response = rq.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
+        entries = get_feed_entries(rss_url)
 
-        for article in track(data['feed'], description="GETTING DATA "):
-            title = article['title']
-            sent_label = article['overall_sentiment_label']
-            source = article['source']
-            site_url = article['url']
 
-            tickers=[]
+        for entry in track(entries, description="SCRAPING "):
+            title = entry.get("title")
+            link = entry.get("link")
+            published_time = entry_datetime(entry)
 
-       
+            #print("CHECKING: ", title)
 
-        for te in article.get("ticker_sentiment", []):
-            tickers.append({
-                "ticker": te.get("ticker"),
-                "relevance": te.get("relevance_score"),
-                "sentiment_score": te.get("ticker_sentiment_score"),
-                "sentiment_label": te.get("ticker_sentiment_label")
+            html = trafilatura.fetch_url(link)
+
+            if html is None: #no text
+                #print("NO TEXT FOUND")
+                continue
+            else: # we have text
+                text = trafilatura.extract(html)
+                #print("TEXT FOUND")
+
+            articles.append({       #data appending
+                "source_feed":rss_url,
+                "title":title,
+                "link":link,
+                "full_article":text
             })
-
-        full_text = web_scrapper(site_url)
-
-        articles.append({
-            "title": title,
-            "url": site_url,
-            "source": source,
-            "overall_sentiment": sent_label,
-            "tickers": tickers,
-            "full_article": full_text
-        })
+    
+    print("articles saved: ",len(articles))
+    log_data()
 
 
 
@@ -163,7 +182,7 @@ def log_data():
 
     print("[green]Saved to news_articles.csv[/green]")
 
-    ticker_count = Counter(articles['tickers'])
+    ticker_count = Counter()
 
 pull_data()
 
