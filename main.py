@@ -125,6 +125,9 @@ def pull_data(count = C, session=None):
     #print(stream)
 
     return stream
+
+
+#region get helper functions
 def get_date(article):
     dt = article['content']['pubDate']
 
@@ -159,7 +162,7 @@ def get_title(article):
     else:
         print("NO title found")
         return None
-
+#endregion
     
 
 def web_scrapper(article_url):
@@ -174,8 +177,6 @@ def web_scrapper(article_url):
     if text:
         return text
 
-def run_model():
-    ...
 
 def save_articles(rows):
     df = pd.DataFrame(rows)
@@ -188,8 +189,6 @@ seen_tickers=[]
 rows=[]
 def main():
     
-
-
     stream = pull_data(count=C, session=None)
   
     for article in track(stream, description="CHECKING"):
@@ -202,17 +201,10 @@ def main():
         seen_titles.add(title)
 
 
-
-
-
-
         date = get_date(article=article)
         link_ = get_link(article=article)
         txt = web_scrapper(link_)
         ticker = get_ticker(article=article)
-
-
-
 
 
         if ticker is not None and txt is not None:
@@ -246,17 +238,7 @@ def main():
             save_articles(rows)
             
 
-           
-        
-    
-
-
-   
-
-
-
-
-
+         
 
 if __name__ == "__main__":
     print(f.renderText("-"*10))
