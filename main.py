@@ -1,8 +1,8 @@
+#region IMPORT
 #Web scraping
 import requests as rq
 import feedparser
 import trafilatura
-import re
 #--------------
 
 #Time
@@ -12,72 +12,36 @@ from zoneinfo import ZoneInfo
 #--------------
 
 #Machine Learning
-import os
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"   # hide INFO/WARNING/ERROR C++ logs
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # hide the oneDNN message
-import tensorflow as tf
 from finBERT_model import analyze_text
 #---------------
 
 #numbers helpers
 import pandas as pd
-import numpy as np
-import openpyxl
-
+import random as rd
 #----------------
 
 #Counting
 from collections import Counter
-import string
 #----------------
 
 #Looks
 from pyfiglet import Figlet
-import rich
 from rich import print
 from colorama import Fore
 from rich.progress import track
 #---------------
-
-#API
-
-#--------------
+#endregion IMPORT
 
 
-if tf.__version__:
-    print("-"*20)
-    print("WORKS")
-    print("-"*20)
-else:
-    print("NOT WORKING")
-
-FEEDS = ["https://finance.yahoo.com/news/rssindex",
-        "https://www.cnbc.com/id/100003114/device/rss/rss.html",            # CNBC top news
-        "https://www.cnbc.com/id/20910258/device/rss/rss.html",             # CNBC markets
-        "https://feeds.content.dowjones.io/public/rss/mw_topstories",       # MarketWatch
-]
-
-FEEDS_TEST = [
-    "https://finance.yahoo.com/news/rssindex",
-]
-
-FEEDS_MORE = [
-    "https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT,NVDA,TSLA&region=US&lang=en-US",
-
-    # Other finance feeds:
-    "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-    "https://www.cnbc.com/id/20910258/device/rss/rss.html",
-    "https://feeds.marketwatch.com/marketwatch/topstories/",
-]
-
-
-
-#NCP_URL = "https://finance.yahoo.com/xhr/ncp"
+#------------------------------
+#NCP_URL = "https://finance.yahoo.com/xhr/ncp" #old -> dont use
 NCP_URL = (
     "https://finance.yahoo.com/xhr/ncp"
     "?location=US&queryRef=newsAll&serviceKey=ncp_fin"
     "&listName=latest-news&lang=en-US&region=US")
+#------------------------------
 
+#------------------------------
 HEADERS = {
     "User-Agent": (     #These are only used so it dosent trace reqeuests/2.34
         "Mozilla/5.0  (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -85,18 +49,35 @@ HEADERS = {
     ),
     "Content-Type": "application/json",
 }
+#------------------------------
 
-
+#------------------------------
 f = Figlet(font="starwars", width=200)
 ERR = f.renderText("ERROR")
+STOPPED = f.renderText("STOPPED")
+#------------------------------
 
-C = 10 #default for ammt articles
-WAIT_TIME = 90 #seconds for time to wait
-FILE = 'news.csv'
-
-LIVE = False  #set to false for past
+#------------------------------
+LIVE = True  
+#set to false for past
 # set to true for live checking
+#------------------------------
 
+#------------------------------
+LOWER = 30 #lower limit for time in between rq
+UPPER = 40 # upper limit
+# used to randomly send requests -> seem less like a bot
+#------------------------------
+
+#------------------------------
+C = 30 #default for ammt articles
+if LIVE == True:
+    C = 1
+#------------------------------
+
+#------------------------------
+FILE = 'news.csv'
+#------------------------------
 articles=[]
 
 
@@ -104,7 +85,7 @@ articles=[]
 
 
 
-def pull_data(count = 10, session=None):
+def pull_data(count = C, session=None):
 
     cut_off = datetime.now(dt_timezone.utc) - timedelta(hours=24)
     
@@ -196,44 +177,78 @@ def web_scrapper(article_url):
 def run_model():
     ...
 
-def save_articles(article,pos_tickers,neg_tickers,conclusion):
-    df = pd.DataFrame([article, pos_tickers, neg_tickers, conclusion])
+def save_articles(rows):
+    df = pd.DataFrame(rows)
     df.to_csv(FILE, index=False)
-    print(f"saved {len(article)} articles to {FILE}")
-    print(df.head())
-
+    print(f"saved article to {FILE} total of {len(rows)} articles")
+    
+seen_titles = set()
 seen_tickers=[]
-positive_tickers=[]
-negative_tickers=[]
-def main():
 
-    print(f.renderText("-"*10))
-    print(f.renderText("NEWS BOT"))
-    print(f.renderText("-"*10))
-    print("[bold black]- Carson Shae\n\n")
+rows=[]
+def main():
+    
+
 
     stream = pull_data(count=C, session=None)
-    for article in stream:
+  
+    for article in track(stream, description="CHECKING"):
+ 
+        title = article['content']['title']
+        if title in seen_titles:
+            print("[yellow] duplicate skipping...[/yellow]")
+            continue
+
+        seen_titles.add(title)
+
+
+
+
+
+
         date = get_date(article=article)
         link_ = get_link(article=article)
         txt = web_scrapper(link_)
         ticker = get_ticker(article=article)
+
+
+
+
+
         if ticker is not None and txt is not None:
+
             conclusion = analyze_text(txt)
-            print(f"Conclusion {conclusion['conclusion']}")
+            conc_final = conclusion['conclusion']
+            print(f"Conclusion {conc_final}")
+            
+            positive_tickers=[]
+            negative_tickers=[]
+            positive_sentinces=[]
+            negative_sentinces=[]
+
             for symbol in ticker:
-                symbols = symbol['symbol']
-                print(symbols)
-                seen_tickers.append(symbols)
+                sym = symbol['symbol']
+                print(sym)
+                seen_tickers.append(sym)
+
                 if conclusion['conclusion'] == 'positive':
-                    positive_tickers.append(symbols)
+                    positive_tickers.append(sym)
                 if conclusion['conclusion'] == 'negative':
-                    negative_tickers.append(symbols)
-                sum = {"article":article, 
-                       "pos_tickers":positive_tickers,
-                          "neg_tickers":negative_tickers,  #this dont work
-                        "conclusion":conclusion,
-                        }
+                    negative_tickers.append(sym)
+
+            summary = {"article":title, 
+                    "pos_tickers":positive_tickers,
+                        "neg_tickers":negative_tickers,  #this dont work
+                    "conclusion":conc_final,
+                    "link":link_
+            }
+            rows.append(summary)
+            save_articles(rows)
+            
+
+           
+        
+    
 
 
    
@@ -244,7 +259,25 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    print(f.renderText("-"*10))
+    print(f.renderText("NEWS BOT"))
+    print(f.renderText("-"*10))
+    print("[bold black]- Carson Shae\n\n")
+
+
+    while LIVE == True:
+        try:
+            choice = rd.randint(a=LOWER, b=UPPER) 
+            # makes a new int every time to hide common bot requests
+            main()
+            t.sleep(choice)
+
+        except KeyboardInterrupt:
+            print(STOPPED)
+            break
+                
+    if LIVE == False:
+        main()
         
 
                     
