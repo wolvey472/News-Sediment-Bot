@@ -8,7 +8,7 @@ import re
 #Time
 import time as t
 from datetime import datetime, timezone as dt_timezone, timedelta
-
+from zoneinfo import ZoneInfo
 #--------------
 
 #Machine Learning
@@ -16,6 +16,7 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"   # hide INFO/WARNING/ERROR C++ logs
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # hide the oneDNN message
 import tensorflow as tf
+from finBERT_model import analyze_text
 #---------------
 
 #numbers helpers
@@ -41,6 +42,7 @@ from rich.progress import track
 #API
 
 #--------------
+
 
 if tf.__version__:
     print("-"*20)
@@ -70,11 +72,11 @@ FEEDS_MORE = [
 
 
 
+#NCP_URL = "https://finance.yahoo.com/xhr/ncp"
 NCP_URL = (
     "https://finance.yahoo.com/xhr/ncp"
     "?location=US&queryRef=newsAll&serviceKey=ncp_fin"
-    "&listName=latest-news&lang=en-US&region=US"
-)
+    "&listName=latest-news&lang=en-US&region=US")
 
 HEADERS = {
     "User-Agent": (     #These are only used so it dosent trace reqeuests/2.34
@@ -89,6 +91,11 @@ f = Figlet(font="starwars", width=200)
 ERR = f.renderText("ERROR")
 
 C = 10 #default for ammt articles
+WAIT_TIME = 90 #seconds for time to wait
+FILE = 'news.csv'
+
+LIVE = False  #set to false for past
+# set to true for live checking
 
 articles=[]
 
@@ -97,70 +104,84 @@ articles=[]
 
 
 
-def pull_data(count = int, session=None):
-    articles.clear()
+def pull_data(count = 10, session=None):
+
     cut_off = datetime.now(dt_timezone.utc) - timedelta(hours=24)
     
     http = session or rq # session only for tests
 
     json = {"serviceConfig": {
         "count":count,
-        "snipperCount":count,
-        "spaceId": "95993639",  
+        "snippetCount":count,
+        "spaceId": "95993639",
+      
     }}
 
     resp = http.post(url=NCP_URL, json=json,
                       timeout=20, headers=HEADERS)
 
     #region ERR's
-    resp.raise_for_status()
-    if(code := resp.status_code()) in [400, 500]:
-        print(ERR)
     
-    if code in [401, 403, 501, 502]:
-        print("Blocked?")
+    if resp.status_code != 200:
+        print("BAD REQUESTS")
+        print(resp.status_code)
+        print(resp.url)
+        print(resp.text[:500])
+        return []
+    
+    if code:= resp.status_code in [401, 403, 501, 502]:
+        print("[red]Blocked?")
 
     if code == 429:
         print("[red]CODE Too many Requests")
+   
     #endregion ERR's
     
     data = resp.json()
 
     stream = data["data"]["tickerStream"]["stream"]
     
-    
+    #print(stream)
 
     return stream
+def get_date(article):
+    dt = article['content']['pubDate']
 
-def get_link():
+    utc_time = datetime.fromisoformat(dt)
     
-    stream = pull_data(count=C)
 
-    
+    ct = utc_time.astimezone(ZoneInfo("America/Chicago"))
+    normal_time = ct.strftime("%I:%M %p")
+    print(normal_time)
+    return normal_time
 
-    #---check every possible link---
-
-    if stream.get('clickThroughUrl'):
-        link = stream['clickThroughUrl'].get("url")
-    
-    if link is None and stream.get("canonicalUrl"):
-        link = stream["canonicalUrl"].get("url")
-        
-    if link and link.startswith("/"): 
-        link = "https://finance.yahoo.com" + link
-        #  safer to webscrape yahoo bc -> high traffic
-
-    if link:
-        return link
-    if not link: #same as else
+def get_ticker(article):
+    ticker = None
+    try:
+        ticker = article['content']['finance']['stockTickers']
+    except: 
         return None
+    else:
+        return ticker
+
+def get_link(article):
     
+    link = None
+    
+    link = article['content']['canonicalUrl']['url']
+    print(link)
+    return link
+    
+def get_title(article):
+    if title :=article.get("title"):
+        return title
+    else:
+        print("NO title found")
+        return None
 
     
 
 def web_scrapper(article_url):
-
-    link = get_link()
 
     html = trafilatura.fetch_url(article_url)
     # dowload in html 
@@ -169,10 +190,21 @@ def web_scrapper(article_url):
     
     else:
         text = trafilatura.extract(html)
+    if text:
+        return text
 
-    return text
+def run_model():
+    ...
 
+def save_articles(article,pos_tickers,neg_tickers,conclusion):
+    df = pd.DataFrame([article, pos_tickers, neg_tickers, conclusion])
+    df.to_csv(FILE, index=False)
+    print(f"saved {len(article)} articles to {FILE}")
+    print(df.head())
 
+seen_tickers=[]
+positive_tickers=[]
+negative_tickers=[]
 def main():
 
     print(f.renderText("-"*10))
@@ -180,34 +212,36 @@ def main():
     print(f.renderText("-"*10))
     print("[bold black]- Carson Shae\n\n")
 
-    web_scrapper()
+    stream = pull_data(count=C, session=None)
+    for article in stream:
+        date = get_date(article=article)
+        link_ = get_link(article=article)
+        txt = web_scrapper(link_)
+        ticker = get_ticker(article=article)
+        if ticker is not None and txt is not None:
+            conclusion = analyze_text(txt)
+            print(f"Conclusion {conclusion['conclusion']}")
+            for symbol in ticker:
+                symbols = symbol['symbol']
+                print(symbols)
+                seen_tickers.append(symbols)
+                if conclusion['conclusion'] == 'positive':
+                    positive_tickers.append(symbols)
+                if conclusion['conclusion'] == 'negative':
+                    negative_tickers.append(symbols)
+                sum = {"article":article, 
+                       "pos_tickers":positive_tickers,
+                          "neg_tickers":negative_tickers,  #this dont work
+                        "conclusion":conclusion,
+                        }
+
+
    
 
 
 
-file = "news.csv"
-def log_data():
 
-    stream = pull_data(count=10)
 
-    if len(stream) == 0:
-        print("[red]no articles found")
-        return None
-    
-    df = pd.DataFrame(articles)
-
-    #sort newest first
-
-    if 'published' in df.columns:
-        df['published'] = pd.to_datetime(df['published'], errors="coerce")
-        df = df.sort_values('published', ascending=False)
-
-    df.to_csv(file, index=False)
-
-    print(f"Saved {len(df)} articles to {file}")
-data = pull_data()
-
-print("articles saved: ", len(data))
 
 if __name__ == "__main__":
     main()
