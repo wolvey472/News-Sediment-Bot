@@ -59,9 +59,11 @@ STOPPED = f.renderText("STOPPED")
 
 #------------------------------
 LIVE = True  
-#set to false for past
+# set to false for past
 # set to true for live checking
 #------------------------------
+
+#ONLY IF LIVE IS TRUE
 
 #------------------------------
 LOWER = 30 #lower limit for time in between rq
@@ -102,20 +104,18 @@ def pull_data(count = C, session=None):
                       timeout=20, headers=HEADERS)
 
     #region ERR's
-    
-    if resp.status_code != 200:
-        print("BAD REQUESTS")
-        print(resp.status_code)
-        print(resp.url)
-        print(resp.text[:500])
-        return []
-    
-    if code:= resp.status_code in [401, 403, 501, 502]:
-        print("[red]Blocked?")
+    code = resp.status_code
 
-    if code == 429:
-        print("[red]CODE Too many Requests")
-   
+    if code != 200:
+        if code == 429:
+            print("[red] Too many Requests")
+        elif code in [401, 403, 501, 502]:
+            print("[red]Blocked?")
+        
+        print("BAD REQUESTS")
+        print(code)
+        print(resp.url)
+        return []    
     #endregion ERR's
     
     data = resp.json()
@@ -157,9 +157,9 @@ def get_link(article):
     return link
     
 def get_title(article):
-    if title :=article.get("title"):
-        return title
-    else:
+    try:
+        return article["content"]["title"]
+    except KeyError:
         print("NO title found")
         return None
 #endregion
